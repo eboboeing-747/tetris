@@ -531,6 +531,7 @@ private:
 
 		delete this->tile;
 		Type tileType = this->randomTileType();
+		this->logFile << "[lock][new tile type] {" << tileType << "}\n";
 		this->tile = this->summonTile(tileType);
 
 		if (this->tile == nullptr)
@@ -546,7 +547,7 @@ private:
 		this->lock();
 		char newFramePosition = this->fixFramePosition(this->compress() - this->_frameHeight / 2);
 		this->_framePosition = newFramePosition;
-		this->logFile << '\n';
+		// this->logFile << '\n';
 	}
 
 public:
@@ -636,7 +637,7 @@ public:
 		}
 
 		char tileFocus = this->fixFramePosition(this->Points[0].y - this->_frameHeight / 2);
-		this->logFile << "[log][tileFocus] { " << (int)tileFocus << " } [_framePosition] { " << (int)this->_framePosition << " }\n";
+		// this->logFile << "[log][tileFocus] { " << (int)tileFocus << " } [_framePosition] { " << (int)this->_framePosition << " }\n";
 		if (tileFocus > this->_framePosition)
 		{
 			this->_framePosition = tileFocus;
@@ -662,7 +663,7 @@ public:
 
 
 
-class Tab
+/*class Tab
 {
 private:
 	char _width;
@@ -709,7 +710,7 @@ public:
 	{
 		return this->_height;
 	}
-};
+};*/
 
 /*
 class Game
@@ -831,13 +832,7 @@ Key MoveDown(VK_S);
 Key TurnClockwise(VK_E);
 Key TurnCounterClockwise(VK_Q);
 Key Interrupt(VK_ESCAPE);
-
-void gotoxy(short x, short y)
-{
-	COORD pos = { x, y };
-	HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleCursorPosition(output, pos);
-}
+Key Return(VK_RETURN);
 
 void pause()
 {
@@ -850,16 +845,12 @@ void pause()
 			gotoxy(0, 0);
 			return;
 		}
+
+		if (Return.isPressed())
+		{
+			exit(0);
+		}
 	}
-}
-
-void showConsoleCursor(bool showFlag)
-{
-	CONSOLE_CURSOR_INFO     cursorInfo;
-
-	GetConsoleCursorInfo(hConsole, &cursorInfo);
-	cursorInfo.bVisible = showFlag; // set the cursor visibility
-	SetConsoleCursorInfo(hConsole, &cursorInfo);
 }
 
 int main()

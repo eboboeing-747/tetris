@@ -1,8 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <Windows.h>
-
-const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+#include "utility.h"
 
 enum Type : char
 {
@@ -27,7 +26,7 @@ enum Color : char
 	WHITE = 7
 };
 
-Color explicitCast(Type type)
+Color explicitCast(const Type& type)
 {
 	switch (type)
 	{
@@ -58,7 +57,7 @@ Color explicitCast(Type type)
 	}
 }
 
-void setColor(Color color)
+void setColor(const Color& color)
 {
 	SetConsoleTextAttribute(hConsole, color);
 }
