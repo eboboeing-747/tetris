@@ -18,19 +18,19 @@ clock_t KEY_TIMEGAP = 150;
 class Key
 {
 private:
-	int VirtualKey;
+	int virtualKey;
 	clock_t coolDown;
 
 public:
-	Key(int VirtualKey)
+	Key(int virtualKey)
 	{
-		this->VirtualKey = VirtualKey;
+		this->virtualKey = virtualKey;
 		this->coolDown = clock();
 	}
 
 	bool isPressed()
 	{
-		if (!(GetKeyState(this->VirtualKey) & KEY_PRESSED))
+		if (!(GetKeyState(this->virtualKey) & KEY_PRESSED))
 		{
 			return false;
 		}
@@ -42,5 +42,10 @@ public:
 		}
 
 		return false;
+	}
+
+	void setVirtualKey(int& virtualKey)
+	{
+		this->virtualKey = virtualKey;
 	}
 };
