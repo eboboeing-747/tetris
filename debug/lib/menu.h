@@ -4,12 +4,15 @@
 #include "controls.h"
 #include "utility.h"
 
-static Key UP;
-static Key DOWN;
-static Key BACK;
-static Key EXECUTE;
-static Key D_BACK(VK_ESCAPE); // D stands for default
-static Key D_EXECUTE(VK_RETURN); // D stands for default
+namespace Focus
+{
+	static Key UP(VK_W);
+	static Key DOWN(VK_S);
+	static Key BACK(VK_A);
+	static Key EXECUTE(VK_D);
+	static Key D_BACK(VK_ESCAPE); // D stands for default
+	static Key D_EXECUTE(VK_RETURN); // D stands for default
+}
 
 class Option
 {
@@ -135,18 +138,20 @@ private:
 	void renderLine(const size_t& currentIter)
 	{
 		// Option* current = &this->_options.at(currentIter);
+		gotoxy(this->_x, currentIter * 2 + 1 + this->_y);
 
 		std::cout << '+';
 		for (int i = 0; i < this->_width; i++)
 		{
 			std::cout << '-';
 		}
-		std::cout << "+\n";
+		std::cout << '+';
 
 		if (currentIter < this->_options.size())
 		{
+			gotoxy(this->_x, currentIter * 2 + 2 + this->_y);
 			this->_options.at(currentIter).draw();
-		}
+		} 
 	}
 
 public:
@@ -179,23 +184,23 @@ public:
 
 		while (isFocus)
 		{
-			if (UP.isPressed())
+			if (Focus::UP.isPressed())
 			{
 				this->_options.at(this->_focus).setFocus(false);
 				this->_focus = this->fixFocus(this->_focus - 1);
 				this->_options.at(this->_focus).setFocus(true);
 			}
-			else if (DOWN.isPressed())
+			else if (Focus::DOWN.isPressed())
 			{
 				this->_options.at(this->_focus).setFocus(false);
 				this->_focus = this->fixFocus(this->_focus + 1);
 				this->_options.at(this->_focus).setFocus(true);
 			}
-			else if (BACK.isPressed() || D_BACK.isPressed())
+			else if (Focus::BACK.isPressed() || Focus::D_BACK.isPressed())
 			{
 				isFocus = false;
 			}
-			else if (EXECUTE.isPressed() || D_EXECUTE.isPressed())
+			else if (Focus::EXECUTE.isPressed() || Focus::D_EXECUTE.isPressed())
 			{
 				this->_options.at(this->_focus).execute();
 			}
@@ -208,12 +213,7 @@ public:
 
 	void show()
 	{
-		gotoxy(this->_x, this->_y);
-
-		for (int i = 0; i < this->_spaceFront; i++)
-		{
-			std::cout << ' ';
-		}
+		gotoxy(this->_x + this->_spaceFront, this->_y);
 
 		std::cout << this->_name << '\n';
 
