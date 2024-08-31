@@ -44,7 +44,7 @@ public:
 		return false;
 	}
 
-	void setVirtualKey(int& virtualKey)
+	void setVirtualKey(const int& virtualKey)
 	{
 		this->virtualKey = virtualKey;
 	}

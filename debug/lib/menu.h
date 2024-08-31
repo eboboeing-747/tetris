@@ -22,15 +22,17 @@ private:
 	int _spaceFront;
 	int _spaceBack;
 	bool _isFocus;
+	bool _bindWithdraw;
 
 public:
-	Option(const std::string& _name, void (*_command)())
+	Option(const std::string& _name, void (*_command)(), bool _bindWithdraw)
 	{
 		this->_name = _name;
 		this->_command = _command;
 		this->_isFocus = false;
 		this->_spaceFront = 0;
 		this->_spaceBack = 0;
+		this->_bindWithdraw = _bindWithdraw;
 	}
 
 	void calcSpace(int width)
@@ -90,6 +92,11 @@ public:
 	void execute()
 	{
 		this->_command();
+	}
+
+	bool isBound()
+	{
+		return this->_bindWithdraw;
 	}
 };
 
@@ -202,6 +209,11 @@ public:
 			}
 			else if (Focus::EXECUTE.isPressed() || Focus::D_EXECUTE.isPressed())
 			{
+				if (this->_options.at(this->_focus).isBound())
+				{
+					isFocus = false;
+				}
+
 				this->_options.at(this->_focus).execute();
 			}
 
@@ -225,8 +237,9 @@ public:
 
 	void hide()
 	{
-		for (size_t height = 0; height < this->_options.size() * 2; height++)
+		for (size_t height = 0; height < this->_options.size() * 2 + 2; height++)
 		{
+			gotoxy(this->_x, height);
 			for (size_t width = 0; width < this->_width + 2; width++)
 			{
 				std::cout << ' ';
