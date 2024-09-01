@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -6,10 +8,10 @@
 
 namespace Focus
 {
-	static Key UP(VK_W);
-	static Key DOWN(VK_S);
-	static Key BACK(VK_A);
-	static Key EXECUTE(VK_D);
+	static Key UP;
+	static Key DOWN;
+	static Key BACK;
+	static Key EXECUTE;
 	static Key D_BACK(VK_ESCAPE); // D stands for default
 	static Key D_EXECUTE(VK_RETURN); // D stands for default
 }
@@ -94,7 +96,7 @@ public:
 		this->_command();
 	}
 
-	bool isBound()
+	bool isBound() const
 	{
 		return this->_bindWithdraw;
 	}
@@ -109,6 +111,7 @@ private:
 	int _x;
 	int _y;
 	int _width;
+	int _height;
 	int _spaceFront;
 	const char deselected = '-';
 	const char selected = '=';
@@ -127,7 +130,7 @@ private:
 		return focus;
 	}
 
-	size_t width()
+	size_t calcWidth()
 	{
 		size_t maxWidth = 0;
 
@@ -141,10 +144,14 @@ private:
 
 		return maxWidth;
 	}
-	
+
+	int calcHeight()
+	{
+		return this->_options.size() * 2 + 3;
+	}
+
 	void renderLine(const size_t& currentIter)
 	{
-		// Option* current = &this->_options.at(currentIter);
 		gotoxy(this->_x, currentIter * 2 + 1 + this->_y);
 
 		std::cout << '+';
@@ -158,7 +165,7 @@ private:
 		{
 			gotoxy(this->_x, currentIter * 2 + 2 + this->_y);
 			this->_options.at(currentIter).draw();
-		} 
+		}
 	}
 
 public:
@@ -170,7 +177,8 @@ public:
 		this->_options.at(0).setFocus(true);
 		this->_x = _x;
 		this->_y = _y;
-		this->_width = (int)this->width() + 2;
+		this->_width = (int)this->calcWidth() + 2;
+		this->_height = this->calcHeight();
 
 		if (this->_width % 2 != 0)
 		{
@@ -246,5 +254,15 @@ public:
 			}
 			std::cout << '\n';
 		}
+	}
+
+	int width() const
+	{
+		return this->_width;
+	}
+
+	int height() const
+	{
+		return this->_height;
 	}
 };

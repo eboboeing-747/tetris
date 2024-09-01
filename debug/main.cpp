@@ -7,7 +7,9 @@
 #include <Windows.h>
 #include <random>
 #include <fstream>
+#include "lib/menu.h"
 #include "lib/Cell.h"
+#include "lib/utility.h"
 #include "lib/controls.h"
 
 class Point
@@ -302,7 +304,8 @@ private:
 	char _height;
 	char _frameHeight;
 	char _framePosition;
-	const char _maxTileHeight = 2; // temp???
+	const char _maxTileHeight = 2;
+	bool isRunning;
 	std::ofstream logFile; // debug
 
 	char fixFramePosition(char newFramePosition) const
@@ -394,7 +397,7 @@ private:
 			targetLine->at(i) = sourceLine->at(i);
 		}
 	}
-	 
+	
 	LineState lineState(size_t i) const
 	{
 		std::vector<Cell>* line = this->grid->at(i);
@@ -467,12 +470,14 @@ private:
 			this->eraseLine(begin);
 		}
 
-		/*this->logFile << "[" << clock() << "][log] { ";
-		for (size_t i = 0; i < this->grid->size(); i++)
-		{
-			this->logFile << (short)this->lineState(i) << ' ';
-		}
-		this->logFile << "}\n\n";*/
+		// this->logFile << "[" << clock() << "][log] { ";
+		// 
+		// for (size_t i = 0; i < this->grid->size(); i++)
+		// {
+		// 	this->logFile << (short)this->lineState(i) << ' ';
+		// }
+		// this->logFile << "}\n\n";
+		// 
 		// this->logFile << '\n';
 
 		return (char)border;
@@ -518,8 +523,10 @@ private:
 
 	void tempGameOverMessage()
 	{
-		std::cout << "\n\n\n\n\n\n\n\n\n\n|     GAME  OVER";
-		exit(0);
+		const std::string GAME_OVER_MESSAGE("GAME  OVER");
+		gotoxy((this->_width * 2 + 2 - GAME_OVER_MESSAGE.size()) / 2, (this->_frameHeight * 0.8 + 2) / 2);
+		std::cout << GAME_OVER_MESSAGE;
+		this->isRunning = false;
 	}
 
 	void lock()
@@ -531,23 +538,28 @@ private:
 
 		delete this->tile;
 		Type tileType = this->randomTileType();
-		this->logFile << "[lock][new tile type] {" << tileType << "}\n";
 		this->tile = this->summonTile(tileType);
 
 		if (this->tile == nullptr)
 		{
 			this->tempGameOverMessage();
 		}
-
-		this->Points = this->tile->points();
+		else
+		{
+			this->Points = this->tile->points();
+		}
 	}
 
 	void updateOnLock()
 	{
 		this->lock();
+		if (!this->isRunning)
+		{
+			return;
+		}
 		char newFramePosition = this->fixFramePosition(this->compress() - this->_frameHeight / 2);
 		this->_framePosition = newFramePosition;
-		// this->logFile << '\n';
+		this->logFile << '\n';
 	}
 
 public:
@@ -557,6 +569,7 @@ public:
 		this->_height			= _height;
 		this->_frameHeight		= _frameHeight;
 		this->_framePosition	= _frameHeight;
+		this->isRunning			= true;
 
 		this->grid = new std::vector<std::vector<Cell>*>(_height);
 		for (size_t i = 0; i < this->grid->size(); i++)
@@ -591,6 +604,11 @@ public:
 
 	void rotate(short angle)
 	{
+		if (!this->isRunning)
+		{
+			return;
+		}
+
 		if (this->tile->type() == Type::TILE_O)
 		{
 			return;
@@ -607,6 +625,11 @@ public:
 
 	void move(Direction direction)
 	{
+		if (!this->isRunning)
+		{
+			return;
+		}
+
 		this->tile->moved(direction, &this->validityCheck);
 		this->erase();
 
@@ -625,6 +648,11 @@ public:
 
 	void update()
 	{
+		if (!this->isRunning)
+		{
+			return;
+		}
+
 		this->erase();
 		this->Points = this->tile->points();
 
@@ -659,172 +687,12 @@ public:
 
 		std::cout << "+--------------------+\n";
 	}
-};
 
-
-
-/*class Tab
-{
-private:
-	char _width;
-	char _height;
-
-	std::ostream& lowerBorder(std::ostream& os) const
+	bool mainloop() const
 	{
-		for (char i = 0; i < this->_width * 2; i++)
-		{
-			os << (char)196; // ─
-		}
-
-		return os << (char)217; // ┘
-	}
-
-public:
-	Tab()
-	{
-		this->_width = 0;
-		this->_height = 0;
-	}
-
-	std::ostream& renderLine(std::ostream& os, char current) // incomplete
-	{
-		if (current < this->_height)
-		{
-			// render tile
-		}
-
-		if (current == this->_height)
-		{
-			this->lowerBorder(os);
-		}
-
-		return os;
-	}
-
-	char width() const
-	{
-		return this->_width;
-	}
-
-	char height() const
-	{
-		return this->_height;
-	}
-};*/
-
-/*
-class Game
-{
-private:
-	Map* map;
-	Tab* tab;
-	const char MAP_WIDTH = 10;
-	const char MAP_HEIGHT = 40;
-	const char FRAME_WIDTH = 10;
-	const char FRAME_HEIGHT = 20;
-	char frame_position;
-	bool _isRunning;
-
-	std::ostream& upperBorder(std::ostream& os, char tabSize) const
-	{
-		os << (char)218; // ┌
-
-		for (char i = 0; i < this->MAP_WIDTH * 2; i++)
-		{
-			os << (char)196; // ─
-		}
-
-		os << (char)194; // ┬
-
-		for (char i = 0; i < tabSize; i++)
-		{
-			os << (char)196; // ─
-		}
-
-		os << (char)191 << '\n'; // ┐
-
-		return os;
-	}
-
-	std::ostream& lowerBorder(std::ostream& os) const
-	{
-		os << (char)192; // └
-
-		for (char i = 0; i < this->MAP_WIDTH * 2; i++)
-		{
-			os << (char)196; // ─
-		}
-
-		os << (char)217; // ┘
-
-		return os;
-	}
-
-public:
-	Game()
-	{
-		this->map = new Map(this->MAP_WIDTH, this->MAP_HEIGHT, FRAME_HEIGHT);
-		this->tab = new Tab();
-		this->_isRunning = true;
-		this->frame_position = this->FRAME_HEIGHT;
-	}
-
-	std::ostream& render(std::ostream& os)
-	{
-		this->upperBorder(os, this->tab->width());
-
-		for (char i = 0; i < this->frame_position; i++)
-		{
-			os << (char)179; // │
-			map->renderLine(os, i);
-			if (i != this->tab->height())
-			{
-				os << (char)179; // │
-			}
-			else
-			{
-				os << (char)195; // ├
-			}
-			tab->renderLine(os, i);
-			os << "\n";
-		}
-
-		this->lowerBorder(os);
-
-		return os;
-	}
-
-	bool isRunning() const
-	{
-		return this->_isRunning;
-	}
-
-	void stop()
-	{
-		this->_isRunning = false;
-	}
-
-	void rotate(short angle)
-	{
-		this->map->rotate(angle);
-	}
-
-	void move(Direction direction)
-	{
-		this->map->move(direction);
-	}
-
-	void update(std::ostream& os)
-	{
-		this->map->erase();
-		this->map->move(Direction::DOWN);
-		this->map->update();
-		this->render(os);
+		return this->isRunning;
 	}
 };
-*/
-
-
 
 Key MoveRight(VK_D);
 Key MoveLeft(VK_A);
@@ -832,42 +700,51 @@ Key MoveDown(VK_S);
 Key TurnClockwise(VK_E);
 Key TurnCounterClockwise(VK_Q);
 Key Interrupt(VK_ESCAPE);
-Key Return(VK_RETURN);
+
+static const int MAP_WIDTH = 10;
+static const int MAP_HEIGHT = 40;
+static const int FRAME_HEIGHT = 20;
+static const std::string GAME_PAUSED_MESSAGE("GAME  PAUSED");
+
+const double TPS = 2; // 4
+const double FPS = 30;
+
+void keybidns()
+{
+	gotoxy(0, 25);
+	std::cout << "no keybinds tab so far";
+}
+
+Tab PauseMenu("GAME  PAUSED",
+	{
+		Option("back to game", []() { return; }, true ),
+		Option("keybinds", keybidns, false),
+		Option("quit", []() { exit(0); }, false )
+	},
+	3, 5); // MAP_WIDTH * 2 + 6, 0 
 
 void pause()
 {
-	std::cout << "\n\n\n\n\n\n\n\n\n\n|    GAME  PAUSED";
+	gotoxy((MAP_WIDTH * 2 + 2 - GAME_PAUSED_MESSAGE.size()) / 2, (FRAME_HEIGHT * 0.8 + 2) / 2);
+	std::cout << GAME_PAUSED_MESSAGE;
 
-	while (true)
-	{
-		if (Interrupt.isPressed())
-		{
-			gotoxy(0, 0);
-			return;
-		}
-
-		if (Return.isPressed())
-		{
-			exit(0);
-		}
-	}
+	PauseMenu.listenInput();
 }
 
-int main()
+void play()
 {
-	Map map(10, 40, 20);
-
+	Map map(MAP_WIDTH, MAP_HEIGHT, FRAME_HEIGHT);
 	double dropTick = clock();
 	double renderTick = clock();
-	const double TPS = 2; // 4
-	const double FPS = 30;
-	showConsoleCursor(false);
 
-	while (true)
+	gotoxy(0, 0);
+
+	while (map.mainloop())
 	{
-		if (Interrupt.isPressed())
+		if (Focus::D_BACK.isPressed())
 		{
 			pause();
+			gotoxy(0, 0);
 		}
 
 		if (MoveRight.isPressed())
@@ -906,4 +783,24 @@ int main()
 			gotoxy(0, 0);
 		}
 	}
+}
+
+Tab MainMenu("MENU",
+	{
+		Option("play", play, false ),
+		Option("keybinds", keybidns, false ),
+		Option("quit", []() { exit(0); }, false )
+	},
+	5, 5);
+
+int main()
+{
+	showConsoleCursor(false);
+
+	Focus::UP.setVirtualKey(VK_W);
+	Focus::DOWN.setVirtualKey(VK_S);
+	Focus::BACK.setVirtualKey(VK_A);
+	Focus::EXECUTE.setVirtualKey(VK_D);
+
+	MainMenu.listenInput();
 }

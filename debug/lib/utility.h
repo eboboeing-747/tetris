@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Windows.h>
 
 const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
