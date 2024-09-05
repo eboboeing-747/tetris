@@ -293,9 +293,125 @@ public:
 	}
 };
 
+class Viewport
+{
+private:
+	std::vector<std::vector<Cell>*>* _grid;
+	int _x;
+	int _y;
+	char _width;
+	char _height;
+
+	void size(const Type& tiletype)
+	{
+		const std::array<Point, 4>& tileshape = SHAPES.at(tiletype).at(0);
+		this->_width = tileshape.at(3).x + 3;
+		this->_height = tileshape.at(3).y + 3;
+	}
+
+	void gridDelete() const
+	{
+		for (size_t i = 0; i < this->_grid->size(); i++)
+		{
+			delete this->_grid->at(i);
+		}
+
+		delete this->_grid;
+	}
+
+	void gridInit(const Type& tiletype)
+	{
+		if (this->_grid != nullptr)
+		{
+			this->gridDelete();
+		}
+
+		this->size(tiletype);
+
+		this->_grid = new std::vector<std::vector<Cell>*>(this->_height);
+		for (size_t i = 0; i < this->_grid->size(); i++)
+		{
+			this->_grid->at(i) = new std::vector<Cell>(this->_width);
+		}
+	}
+
+	void drawLine(int x, int y) const
+	{
+		gotoxy(x, y);
+		std::cout << '+';
+		for (int i = 0; i < this->_width * 2; i++)
+		{
+			std::cout << '-';
+		}
+		std::cout << '+';
+	}
+
+	void draw() const
+	{
+		this->drawLine(this->_x, this->_y);
+		for (int i = 0; i < this->_grid->size(); i++)
+		{
+			gotoxy(this->_x, this->_y + i + 1);
+			std::cout << '|' << this->_grid->at(i);
+			setColor(Color::WHITE);
+			std::cout << '|';
+		}
+		this->drawLine(this->_x, this->_y + this->_height + 1);
+
+		gotoxy(0, 0);
+	}
+
+	void hide() const
+	{
+		for (int i = 0; i < this->_height + 2; i++)
+		{
+			gotoxy(this->_x, this->_y + i);
+
+			for (int line = 0; line < this->_width * 2 + 2; line++)
+			{
+				std::cout << ' ';
+			}
+		}
+
+		gotoxy(0, 0);
+	}
+
+public:
+	Viewport(const Type& tiletype, int _x, int _y)
+	{
+		this->gridInit(tiletype);
+		this->_x = _x;
+		this->_y = _y;
+	}
+
+	~Viewport()
+	{
+		this->gridDelete();
+	}
+
+	void update(const Type& tiletype)
+	{
+		this->hide();
+		this->gridInit(tiletype);
+
+		const std::array<Point, 4>& tileshape = SHAPES.at(tiletype).at(0);
+
+		for (int i = 0; i < tileshape.size(); i++)
+		{
+			Cell& cell = this->_grid->at(tileshape.at(i).y + 1)->at(tileshape.at(i).x + 1);
+
+			cell.isBlank = false;
+			cell.color = explicitCast(tiletype);
+		}
+
+		this->draw();
+	}
+};
+
 class Map
 {
 private:
+	Viewport* tab;
 	std::vector<std::vector<Cell>*>* grid;
 	std::array<Point, 4> Points;
 	std::array<Point, 4> validityCheck;
@@ -547,6 +663,7 @@ private:
 		else
 		{
 			this->Points = this->tile->points();
+			this->tab->update(tileType);
 		}
 	}
 
@@ -580,6 +697,7 @@ public:
 		Type tileType	= this->randomTileType();
 		this->tile		= this->summonTile(tileType);
 		this->Points	= this->tile->points();
+		this->tab = new Viewport(tileType, this->_width * 2 + 6, 0);
 
 		this->logFile.open("log.txt"); // debug
 	}
@@ -592,6 +710,7 @@ public:
 		}
 
 		delete this->grid;
+
 		this->logFile.close(); // debug
 	}
 
@@ -681,8 +800,7 @@ public:
 		{
 			std::cout << '|' << this->grid->at(i);
 			setColor(Color::WHITE);
-			// std::cout<< "|\n";
-			std::cout << "| " << this->_height - i << "   \n";
+			std::cout << "| " << this->_height - i << " \n";
 		}
 
 		std::cout << "+--------------------+\n";
