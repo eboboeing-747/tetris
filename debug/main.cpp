@@ -1,5 +1,4 @@
-﻿
-#include <array>
+﻿#include <array>
 #include <vector>
 #include <queue>
 #include <cmath>
@@ -7,10 +6,10 @@
 #include <Windows.h>
 #include <random>
 #include <fstream>
-#include "lib/menu.h"
-#include "lib/Cell.h"
-#include "lib/utility.h"
-#include "lib/controls.h"
+#include "menu.h"
+#include "Cell.h"
+#include "utility.h"
+#include "controls.h"
 
 class Point
 {
@@ -65,54 +64,64 @@ enum LineState : char
 	ERR			= 3
 };
 
-const std::array<std::array<std::array<Point, 4>, 4>, 7> SHAPES = 
+const std::array<std::array<std::array<Point, 4>, 4>, 7> SHAPES =
 { {
-	{ {
+	{ { // I
 		{ Point(0, 1), Point(1, 1), Point(2, 1), Point(3, 1) },
 		{ Point(2, 0), Point(2, 1), Point(2, 2), Point(2, 3) },
 		{ Point(0, 2), Point(1, 2), Point(2, 2), Point(3, 2) },
 		{ Point(1, 0), Point(1, 1), Point(1, 2), Point(1, 3) }
 	} },
 
-	{ {
-		{ Point(1, 1), Point(2, 1), Point(1, 2), Point(2, 2) }
+	{ { // O
+		{Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)}
 	} },
 
-	{ {
+	{ { // T
 		{ Point(1, 0), Point(0, 1), Point(1, 1), Point(2, 1) },
 		{ Point(1, 0), Point(1, 1), Point(2, 1), Point(1, 2) },
 		{ Point(0, 1), Point(1, 1), Point(2, 1), Point(1, 2) },
 		{ Point(1, 0), Point(0, 1), Point(1, 1), Point(1, 2) }
 	} },
 
-	{ {
+	{ { // S
 		{ Point(0, 0), Point(1, 0), Point(1, 1), Point(2, 1) },
 		{ Point(2, 0), Point(1, 1), Point(2, 1), Point(1, 2) },
 		{ Point(0, 1), Point(1, 1), Point(1, 2), Point(2, 2) },
 		{ Point(1, 0), Point(0, 1), Point(1, 1), Point(0, 2) }
 	} },
 
-	{ {
+	{ { // Z
 		{ Point(1, 0), Point(2, 0), Point(0, 1), Point(1, 1) },
 		{ Point(1, 0), Point(1, 1), Point(2, 1), Point(2, 2) },
 		{ Point(1, 1), Point(2, 1), Point(0, 2), Point(1, 2) },
 		{ Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 2) }
 	} },
 
-	{ {
+	{ { // J
 		{ Point(0, 0), Point(0, 1), Point(1, 1), Point(2, 1) },
 		{ Point(1, 0), Point(2, 0), Point(1, 1), Point(1, 2) },
 		{ Point(0, 1), Point(1, 1), Point(2, 1), Point(2, 2) },
 		{ Point(1, 0), Point(1, 1), Point(0, 2), Point(1, 2) }
 	} },
 
-	{ {
+	{ { // L
 		{ Point(2, 0), Point(0, 1), Point(1, 1), Point(2, 1) },
 		{ Point(1, 0), Point(1, 1), Point(1, 2), Point(2, 2) },
 		{ Point(0, 1), Point(1, 1), Point(2, 1), Point(0, 2) },
 		{ Point(0, 0), Point(1, 0), Point(1, 1), Point(1, 2) }
 	} }
 } };
+
+const std::array<Point, 7> DIMENSIONS = { // Point.x & Point.y is width & height of corresponding Tile
+	Point(4, 1), // I
+	Point(2, 2), // O
+	Point(3, 2), // T
+	Point(3, 2), // S
+	Point(3, 2), // Z
+	Point(3, 2), // J
+	Point(3, 2)  // L
+};
 
 class Tile
 {
@@ -304,9 +313,8 @@ private:
 
 	void size(const Type& tiletype)
 	{
-		const std::array<Point, 4>& tileshape = SHAPES.at(tiletype).at(0);
-		this->_width = tileshape.at(3).x + 3;
-		this->_height = tileshape.at(3).y + 3;
+		this->_width = DIMENSIONS.at(tiletype).x + 2;
+		this->_height = DIMENSIONS.at(tiletype).y + 2;
 	}
 
 	void gridDelete() const
@@ -335,20 +343,9 @@ private:
 		}
 	}
 
-	void drawLine(int x, int y) const
-	{
-		gotoxy(x, y);
-		std::cout << '+';
-		for (int i = 0; i < this->_width * 2; i++)
-		{
-			std::cout << '-';
-		}
-		std::cout << '+';
-	}
-
 	void draw() const
 	{
-		this->drawLine(this->_x, this->_y);
+		this->drawBorder(this->_x, this->_y);
 		for (int i = 0; i < this->_grid->size(); i++)
 		{
 			gotoxy(this->_x, this->_y + i + 1);
@@ -356,7 +353,7 @@ private:
 			setColor(Color::WHITE);
 			std::cout << '|';
 		}
-		this->drawLine(this->_x, this->_y + this->_height + 1);
+		this->drawBorder(this->_x, this->_y + this->_height + 1);
 
 		gotoxy(0, 0);
 	}
@@ -376,12 +373,25 @@ private:
 		gotoxy(0, 0);
 	}
 
-public:
-	Viewport(const Type& tiletype, int _x, int _y)
+	void drawBorder(int x, int y) const
 	{
-		this->gridInit(tiletype);
+		gotoxy(x, y);
+		std::cout << '+';
+		for (int i = 0; i < this->_width * 2; i++)
+		{
+			std::cout << '-';
+		}
+		std::cout << '+';
+	}
+
+public:
+	Viewport(int _x, int _y)
+	{
+		this->_grid = nullptr;
 		this->_x = _x;
 		this->_y = _y;
+		this->_width = 0;
+		this->_height = 0;
 	}
 
 	~Viewport()
@@ -395,10 +405,20 @@ public:
 		this->gridInit(tiletype);
 
 		const std::array<Point, 4>& tileshape = SHAPES.at(tiletype).at(0);
+		int offset_y = 1;
 
 		for (int i = 0; i < tileshape.size(); i++)
 		{
-			Cell& cell = this->_grid->at(tileshape.at(i).y + 1)->at(tileshape.at(i).x + 1);
+			if (tiletype != Type::TILE_I)
+			{
+				offset_y = 1;
+			}
+			else
+			{
+				offset_y = 0;
+			}
+
+			Cell& cell = this->_grid->at(tileshape.at(i).y + offset_y)->at(tileshape.at(i).x + 1);
 
 			cell.isBlank = false;
 			cell.color = explicitCast(tiletype);
@@ -416,6 +436,7 @@ private:
 	std::array<Point, 4> Points;
 	std::array<Point, 4> validityCheck;
 	Tile* tile;
+	Type nextTiletype;
 	char _width;
 	char _height;
 	char _frameHeight;
@@ -454,11 +475,14 @@ private:
 		this->_framePosition = 0;
 	}
 
-	Type randomTileType() const
+	Type randomTileType()
 	{
 		std::uniform_int_distribution<short> dist(0, 6);
 		std::random_device rd;
-		return (Type)dist(rd);
+		Type currentTiletype = this->nextTiletype;
+		this->nextTiletype = (Type)dist(rd);
+		this->tab->update(nextTiletype);
+		return currentTiletype;
 	}
 
 	bool isWithinRange(const Point& point) const // returns true if point is within borders, false otherwise
@@ -658,12 +682,11 @@ private:
 
 		if (this->tile == nullptr)
 		{
-			this->tempGameOverMessage();
+			this->isRunning = false;
 		}
 		else
 		{
 			this->Points = this->tile->points();
-			this->tab->update(tileType);
 		}
 	}
 
@@ -694,10 +717,11 @@ public:
 			this->grid->at(i) = new std::vector<Cell>(_width);
 		}
 
+		this->tab		= new Viewport(this->_width * 2 + 6, 0);
 		Type tileType	= this->randomTileType();
 		this->tile		= this->summonTile(tileType);
 		this->Points	= this->tile->points();
-		this->tab = new Viewport(tileType, this->_width * 2 + 6, 0);
+		this->tab->update(tileType);
 
 		this->logFile.open("log.txt"); // debug
 	}

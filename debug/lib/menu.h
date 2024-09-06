@@ -197,6 +197,8 @@ public:
 	{
 		bool isFocus = true;
 
+		this->show();
+
 		while (isFocus)
 		{
 			if (Focus::UP.isPressed())
@@ -223,6 +225,10 @@ public:
 				}
 
 				this->_options.at(this->_focus).execute();
+			}
+			else
+			{
+				continue;
 			}
 
 			this->show();
