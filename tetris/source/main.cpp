@@ -6,10 +6,10 @@
 #include <Windows.h>
 #include <random>
 #include <fstream>
-#include "menu.h"
-#include "Cell.h"
-#include "utility.h"
-#include "controls.h"
+#include "../header/menu.h"
+#include "../header/Cell.h"
+#include "../header/utility.h"
+#include "../header/controls.h"
 
 class Point
 {
@@ -75,6 +75,7 @@ const std::array<std::array<std::array<Point, 4>, 4>, 7> SHAPES =
 
 	{ { // O
 		{Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)}
+		// { Point(1, 1), Point(2, 1), Point(1, 2), Point(2, 2) }
 	} },
 
 	{ { // T
@@ -682,6 +683,7 @@ private:
 
 		if (this->tile == nullptr)
 		{
+			// this->tempGameOverMessage();
 			this->isRunning = false;
 		}
 		else
@@ -723,7 +725,7 @@ public:
 		this->Points	= this->tile->points();
 		this->tab->update(tileType);
 
-		this->logFile.open("log.txt"); // debug
+		this->logFile.open("../log.txt"); // debug
 	}
 
 	~Map()

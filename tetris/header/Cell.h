@@ -3,7 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <Windows.h>
-#include "utility.h"
 
 enum Type : char
 {
@@ -28,7 +27,7 @@ enum Color : char
 	WHITE = 7
 };
 
-Color explicitCast(const Type& type)
+Color explicitCast(Type type)
 {
 	switch (type)
 	{
@@ -59,7 +58,7 @@ Color explicitCast(const Type& type)
 	}
 }
 
-void setColor(const Color& color)
+void setColor(Color color)
 {
 	SetConsoleTextAttribute(hConsole, color);
 }

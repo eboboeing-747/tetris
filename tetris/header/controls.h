@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <windows.h>
-#include <time.h>
 
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 #define VK_A 0x41
@@ -15,7 +14,7 @@
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x0001
 
-clock_t KEY_TIMEGAP = 150;
+static clock_t KEY_TIMEGAP = 150;
 
 class Key
 {
@@ -24,6 +23,12 @@ private:
 	clock_t coolDown;
 
 public:
+	Key()
+	{
+		this->virtualKey = 0;
+		this->coolDown = 0;
+	}
+
 	Key(int virtualKey)
 	{
 		this->virtualKey = virtualKey;
