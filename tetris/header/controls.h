@@ -51,8 +51,31 @@ public:
 		return false;
 	}
 
+	void rebindVirtualKey()
+	{
+		Sleep(KEY_TIMEGAP);
+
+		while (true)
+		{
+			for (int virtualKey = 0; virtualKey < 256; virtualKey++)
+			{
+				if (GetKeyState(virtualKey) & KEY_PRESSED)
+				{
+					this->virtualKey = virtualKey;
+					std::cout << "\rrebound " << virtualKey << "   ";
+					return;
+				}
+			}
+		}
+	}
+
 	void setVirtualKey(const int& virtualKey)
 	{
 		this->virtualKey = virtualKey;
+	}
+
+	int getVirtualKey() const
+	{
+		return this->virtualKey;
 	}
 };

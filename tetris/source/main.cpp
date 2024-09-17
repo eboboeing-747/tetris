@@ -845,6 +845,31 @@ Key TurnClockwise(VK_E);
 Key TurnCounterClockwise(VK_Q);
 Key Interrupt(VK_ESCAPE);
 
+void rebindMoveRight()
+{
+	MoveRight.rebindVirtualKey();
+}
+
+void rebindMoveLeft()
+{
+	MoveLeft.rebindVirtualKey();
+}
+
+void rebindMoveDown()
+{
+	MoveDown.rebindVirtualKey();
+}
+
+void rebindTurnClockwise()
+{
+	TurnClockwise.rebindVirtualKey();
+}
+
+void rebindTurnCounterClockwise()
+{
+	TurnCounterClockwise.rebindVirtualKey();
+}
+
 static const int MAP_WIDTH = 10;
 static const int MAP_HEIGHT = 40;
 static const int FRAME_HEIGHT = 20;
@@ -853,16 +878,26 @@ static const std::string GAME_PAUSED_MESSAGE("GAME  PAUSED");
 const double TPS = 2; // 4
 const double FPS = 30;
 
+Tab KeyBinds("keybinds",
+	{
+		Option("back", []() { return; }, true),
+		Option("move right", rebindMoveRight, false),
+		Option("move left", rebindMoveLeft, false),
+		Option("move down", rebindMoveDown, false),
+		Option("rotate left", rebindTurnClockwise, false),
+		Option("rotate right", rebindTurnCounterClockwise, false)
+	},
+	42, 0);
+
 void keybidns()
 {
-	gotoxy(0, 25);
-	std::cout << "no keybinds tab so far";
+	KeyBinds.listenInput();
 }
 
 Tab PauseMenu("GAME  PAUSED",
 	{
 		Option("back to game", []() { return; }, true ),
-		Option("keybinds", keybidns, false),
+		Option("keybinds", keybidns, false ),
 		Option("quit", []() { exit(0); }, false )
 	},
 	3, 5); // MAP_WIDTH * 2 + 6, 0 
@@ -940,11 +975,11 @@ Tab MainMenu("MENU",
 int main()
 {
 	showConsoleCursor(false);
-
+	
 	Focus::UP.setVirtualKey(VK_W);
 	Focus::DOWN.setVirtualKey(VK_S);
 	Focus::BACK.setVirtualKey(VK_A);
 	Focus::EXECUTE.setVirtualKey(VK_D);
-
+	
 	MainMenu.listenInput();
 }
