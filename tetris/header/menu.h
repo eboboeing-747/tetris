@@ -16,10 +16,13 @@ namespace Focus
 	static Key D_EXECUTE(VK_RETURN); // D stands for default
 }
 
+class Tab;
+
 class Option
 {
 private:
 	std::string _name;
+	Tab* _master;
 	void (*_command)();
 	int _spaceFront;
 	int _spaceBack;
@@ -35,6 +38,7 @@ public:
 		this->_spaceFront = 0;
 		this->_spaceBack = 0;
 		this->_bindWithdraw = _bindWithdraw;
+		this->_master = nullptr;
 	}
 
 	void calcSpace(int width)
@@ -91,6 +95,8 @@ public:
 		this->_isFocus = _isFocus;
 	}
 
+	void setName(const std::string& _name);
+
 	void execute()
 	{
 		this->_command();
@@ -107,6 +113,7 @@ class Tab
 private:
 	std::string _name;
 	std::vector<Option> _options;
+	void (*_onHide)();
 	int _focus;
 	int _x;
 	int _y;
@@ -177,6 +184,24 @@ public:
 		this->_options.at(0).setFocus(true);
 		this->_x = _x;
 		this->_y = _y;
+		this->fixWidth();
+		this->_onHide = nullptr;
+	}
+
+	Tab(const std::string& _name, std::initializer_list<Option> _options, void (*_onHide)(), const int& _x, const int& _y)
+	{
+		this->_name = _name;
+		this->_options = _options;
+		this->_focus = 0;
+		this->_options.at(0).setFocus(true);
+		this->_x = _x;
+		this->_y = _y;
+		this->fixWidth();
+		this->_onHide = _onHide;
+	}
+
+	void fixWidth()
+	{
 		this->_width = (int)this->calcWidth() + 2;
 		this->_height = this->calcHeight();
 
@@ -249,8 +274,38 @@ public:
 		}
 	}
 
+	Option* current()
+	{
+		Option* option = &(this->_options.at(this->_focus));
+
+		if (option == nullptr) // debug
+		{
+			std::cout << "[Tab] option was nullptr\n";
+			return nullptr;
+		}
+
+		return &(this->_options.at(this->_focus));
+	}
+
+	/*std::vector<Option>::iterator current()
+	{
+		if (this->_options.begin() + this->_focus == nullptr)
+
+		return this->_options.begin() + this->_focus;
+	}*/
+
+	void setName(const std::string& name)
+	{
+		this->_options.at(this->_focus).setName(name);
+	}
+
 	void hide()
 	{
+		if (this->_onHide != nullptr)
+		{
+			this->_onHide();
+		}
+
 		for (size_t height = 0; height < this->_options.size() * 2 + 2; height++)
 		{
 			gotoxy(this->_x, height);
@@ -272,3 +327,16 @@ public:
 		return this->_height;
 	}
 };
+
+void Option::setName(const std::string& _name)
+{
+	if (this == nullptr) // debug
+	{
+		std::cout << "[Option] Option was nullptr";
+		return;
+	}
+	
+	this->_name = _name;
+	this->_master->fixWidth();
+	this->_master->show();
+}

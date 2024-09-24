@@ -6,6 +6,7 @@
 #include <Windows.h>
 #include <random>
 #include <fstream>
+#include <string>
 #include "../header/menu.h"
 #include "../header/Cell.h"
 #include "../header/utility.h"
@@ -845,29 +846,45 @@ Key TurnClockwise(VK_E);
 Key TurnCounterClockwise(VK_Q);
 Key Interrupt(VK_ESCAPE);
 
+Tab KeyBindsDisplay("",
+	{
+		Option("back", []() { return; }, true),
+		Option("d", []() { return; }, false),
+		Option("a", []() { return; }, false),
+		Option("s", []() { return; }, false),
+		Option("q", []() { return; }, false),
+		Option("e", []() { return; }, false),
+	},
+	57, 0);
+
 void rebindMoveRight()
 {
 	MoveRight.rebindVirtualKey();
+	KeyBindsDisplay.current()->setName(std::to_string(MoveRight.getVirtualKey()));
 }
 
 void rebindMoveLeft()
 {
 	MoveLeft.rebindVirtualKey();
+	KeyBindsDisplay.current()->setName(std::to_string(MoveLeft.getVirtualKey()));
 }
 
 void rebindMoveDown()
 {
 	MoveDown.rebindVirtualKey();
+	KeyBindsDisplay.current()->setName(std::to_string(MoveDown.getVirtualKey()));
 }
 
 void rebindTurnClockwise()
 {
 	TurnClockwise.rebindVirtualKey();
+	KeyBindsDisplay.current()->setName(std::to_string(TurnClockwise.getVirtualKey()));
 }
 
 void rebindTurnCounterClockwise()
 {
 	TurnCounterClockwise.rebindVirtualKey();
+	KeyBindsDisplay.current()->setName(std::to_string(TurnCounterClockwise.getVirtualKey()));
 }
 
 static const int MAP_WIDTH = 10;
@@ -880,17 +897,18 @@ const double FPS = 30;
 
 Tab KeyBinds("keybinds",
 	{
-		Option("back", []() { return; }, true),
+		Option("back", []() { KeyBindsDisplay.hide(); }, true),
 		Option("move right", rebindMoveRight, false),
 		Option("move left", rebindMoveLeft, false),
 		Option("move down", rebindMoveDown, false),
 		Option("rotate left", rebindTurnClockwise, false),
 		Option("rotate right", rebindTurnCounterClockwise, false)
 	},
-	42, 0);
+	[]() { KeyBindsDisplay.hide(); }, 42, 0);
 
 void keybidns()
 {
+	KeyBindsDisplay.show();
 	KeyBinds.listenInput();
 }
 
@@ -904,6 +922,7 @@ Tab PauseMenu("GAME  PAUSED",
 
 void pause()
 {
+	showConsoleCursor(false);
 	gotoxy((MAP_WIDTH * 2 + 2 - GAME_PAUSED_MESSAGE.size()) / 2, (FRAME_HEIGHT * 0.8 + 2) / 2);
 	std::cout << GAME_PAUSED_MESSAGE;
 

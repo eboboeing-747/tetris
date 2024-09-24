@@ -67,6 +67,8 @@ public:
 				}
 			}
 		}
+
+		Sleep(KEY_TIMEGAP);
 	}
 
 	void setVirtualKey(const int& virtualKey)

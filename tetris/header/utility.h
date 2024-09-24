@@ -13,7 +13,7 @@ void gotoxy(short x, short y)
 
 void showConsoleCursor(bool showFlag)
 {
-	CONSOLE_CURSOR_INFO     cursorInfo;
+	CONSOLE_CURSOR_INFO cursorInfo;
 
 	GetConsoleCursorInfo(hConsole, &cursorInfo);
 	cursorInfo.bVisible = showFlag; // set the cursor visibility
