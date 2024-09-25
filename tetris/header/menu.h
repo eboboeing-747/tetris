@@ -41,6 +41,11 @@ public:
 		this->_master = nullptr;
 	}
 
+	void setMaster(Tab* _master)
+	{
+		this->_master = _master;
+	}
+
 	void calcSpace(int width)
 	{
 		size_t size = this->_name.size();
@@ -112,7 +117,7 @@ class Tab
 {
 private:
 	std::string _name;
-	std::vector<Option> _options;
+	std::vector<Option*> _options;
 	void (*_onHide)();
 	int _focus;
 	int _x;
@@ -120,8 +125,8 @@ private:
 	int _width;
 	int _height;
 	int _spaceFront;
-	const char deselected = '-';
-	const char selected = '=';
+	static const char deselected = '-';
+	static const char selected = '=';
 
 	int fixFocus(int focus)
 	{
@@ -141,11 +146,11 @@ private:
 	{
 		size_t maxWidth = 0;
 
-		for (const Option& option : this->_options)
+		for (const Option* option : this->_options)
 		{
-			if (option.length() > maxWidth)
+			if (option->length() > maxWidth)
 			{
-				maxWidth = option.length();
+				maxWidth = option->length();
 			}
 		}
 
@@ -171,33 +176,51 @@ private:
 		if (currentIter < this->_options.size())
 		{
 			gotoxy(this->_x, currentIter * 2 + 2 + this->_y);
-			this->_options.at(currentIter).draw();
+			this->_options.at(currentIter)->draw();
 		}
 	}
 
 public:
-	Tab(const std::string& _name, std::initializer_list<Option> _options, const int& _x, const int& _y)
+	Tab(const std::string& _name, std::initializer_list<Option*> _options, const int& _x, const int& _y)
 	{
 		this->_name = _name;
 		this->_options = _options;
 		this->_focus = 0;
-		this->_options.at(0).setFocus(true);
+		this->_options.at(0)->setFocus(true);
 		this->_x = _x;
 		this->_y = _y;
 		this->fixWidth();
 		this->_onHide = nullptr;
+
+		for (size_t i = 0; i < this->_options.size(); i++)
+		{
+			this->_options.at(i)->setMaster(this);
+		}
 	}
 
-	Tab(const std::string& _name, std::initializer_list<Option> _options, void (*_onHide)(), const int& _x, const int& _y)
+	Tab(const std::string& _name, std::initializer_list<Option*> _options, void (*_onHide)(), const int& _x, const int& _y)
 	{
 		this->_name = _name;
 		this->_options = _options;
 		this->_focus = 0;
-		this->_options.at(0).setFocus(true);
+		this->_options.at(0)->setFocus(true);
 		this->_x = _x;
 		this->_y = _y;
 		this->fixWidth();
 		this->_onHide = _onHide;
+
+		for (size_t i = 0; i < this->_options.size(); i++)
+		{
+			this->_options.at(i)->setMaster(this);
+		}
+	}
+
+	~Tab()
+	{
+		for (Option* option : this->_options)
+		{
+			delete option;
+		}
 	}
 
 	void fixWidth()
@@ -212,9 +235,9 @@ public:
 
 		this->_spaceFront = (this->_width - (int)this->_name.size() + 2) / 2;
 
-		for (Option& option : this->_options)
+		for (Option* option : this->_options)
 		{
-			option.calcSpace(this->_width);
+			option->calcSpace(this->_width);
 		}
 	}
 
@@ -228,15 +251,15 @@ public:
 		{
 			if (Focus::UP.isPressed())
 			{
-				this->_options.at(this->_focus).setFocus(false);
+				this->_options.at(this->_focus)->setFocus(false);
 				this->_focus = this->fixFocus(this->_focus - 1);
-				this->_options.at(this->_focus).setFocus(true);
+				this->_options.at(this->_focus)->setFocus(true);
 			}
 			else if (Focus::DOWN.isPressed())
 			{
-				this->_options.at(this->_focus).setFocus(false);
+				this->_options.at(this->_focus)->setFocus(false);
 				this->_focus = this->fixFocus(this->_focus + 1);
-				this->_options.at(this->_focus).setFocus(true);
+				this->_options.at(this->_focus)->setFocus(true);
 			}
 			else if (Focus::BACK.isPressed() || Focus::D_BACK.isPressed())
 			{
@@ -244,12 +267,12 @@ public:
 			}
 			else if (Focus::EXECUTE.isPressed() || Focus::D_EXECUTE.isPressed())
 			{
-				if (this->_options.at(this->_focus).isBound())
+				if (this->_options.at(this->_focus)->isBound())
 				{
 					isFocus = false;
 				}
 
-				this->_options.at(this->_focus).execute();
+				this->_options.at(this->_focus)->execute();
 			}
 			else
 			{
@@ -274,29 +297,19 @@ public:
 		}
 	}
 
-	Option* current()
+	Option* at(const size_t& iteration)
 	{
-		Option* option = &(this->_options.at(this->_focus));
-
-		if (option == nullptr) // debug
-		{
-			std::cout << "[Tab] option was nullptr\n";
-			return nullptr;
-		}
-
-		return &(this->_options.at(this->_focus));
+		return this->_options.at(iteration);
 	}
 
-	/*std::vector<Option>::iterator current()
+	size_t current() const
 	{
-		if (this->_options.begin() + this->_focus == nullptr)
-
-		return this->_options.begin() + this->_focus;
-	}*/
+		return this->_focus;
+	}
 
 	void setName(const std::string& name)
 	{
-		this->_options.at(this->_focus).setName(name);
+		this->_options.at(this->_focus)->setName(name);
 	}
 
 	void hide()
@@ -309,7 +322,7 @@ public:
 		for (size_t height = 0; height < this->_options.size() * 2 + 2; height++)
 		{
 			gotoxy(this->_x, height);
-			for (size_t width = 0; width < this->_width + 2; width++)
+			for (int width = 0; width < this->_width + 2; width++)
 			{
 				std::cout << ' ';
 			}
@@ -330,13 +343,8 @@ public:
 
 void Option::setName(const std::string& _name)
 {
-	if (this == nullptr) // debug
-	{
-		std::cout << "[Option] Option was nullptr";
-		return;
-	}
-	
 	this->_name = _name;
+	this->_master->hide();
 	this->_master->fixWidth();
 	this->_master->show();
 }

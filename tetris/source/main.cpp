@@ -14,7 +14,6 @@
 
 class Point
 {
-private:
 public:
 	char x;
 	char y;
@@ -276,7 +275,7 @@ public:
 	{
 		std::array<Point, 4> temp = this->shape;
 
-		for (char i = 0; i < this->shape.size(); i++)
+		for (size_t i = 0; i < this->shape.size(); i++)
 		{
 			temp[i].add(this->x, this->y);
 		}
@@ -348,7 +347,7 @@ private:
 	void draw() const
 	{
 		this->drawBorder(this->_x, this->_y);
-		for (int i = 0; i < this->_grid->size(); i++)
+		for (size_t i = 0; i < this->_grid->size(); i++)
 		{
 			gotoxy(this->_x, this->_y + i + 1);
 			std::cout << '|' << this->_grid->at(i);
@@ -409,7 +408,7 @@ public:
 		const std::array<Point, 4>& tileshape = SHAPES.at(tiletype).at(0);
 		int offset_y = 1;
 
-		for (int i = 0; i < tileshape.size(); i++)
+		for (size_t i = 0; i < tileshape.size(); i++)
 		{
 			if (tiletype != Type::TILE_I)
 			{
@@ -445,7 +444,6 @@ private:
 	char _framePosition;
 	const char _maxTileHeight = 2;
 	bool isRunning;
-	std::ofstream logFile; // debug
 
 	char fixFramePosition(char newFramePosition) const
 	{
@@ -534,7 +532,7 @@ private:
 		std::vector<Cell>* sourceLine = this->grid->at(source);
 		std::vector<Cell>* targetLine = this->grid->at(target);
 
-		for (size_t i = 0; i < this->_width; i++)
+		for (char i = 0; i < this->_width; i++)
 		{
 			targetLine->at(i) = sourceLine->at(i);
 		}
@@ -585,11 +583,9 @@ private:
 			if (this->lineState(i) == LineState::PARTIALLY)
 			{
 				indexes.push(i);
-				// this->logFile << "[" << clock() << "][log][PARTIALLY] { " << i << " }\n";
 			}
 			else if (this->lineState(i) == LineState::EMPTY)
 			{
-				// this->logFile << "[" << clock() << "][log][EMPTY] { " << i << " }\n";
 				border = i;
 				break;
 			}
@@ -599,9 +595,7 @@ private:
 		{
 			if (begin != indexes.front())
 			{
-				// this->grid->at(begin) = this->grid->at(indexes.front());
 				this->copyLine(indexes.front(), begin);
-				// this->logFile << "[" << clock() << "][log] { " << indexes.front() << " -> " << begin << " }\n";
 			}
 			indexes.pop();
 			begin--;
@@ -611,16 +605,6 @@ private:
 		{
 			this->eraseLine(begin);
 		}
-
-		// this->logFile << "[" << clock() << "][log] { ";
-		// 
-		// for (size_t i = 0; i < this->grid->size(); i++)
-		// {
-		// 	this->logFile << (short)this->lineState(i) << ' ';
-		// }
-		// this->logFile << "}\n\n";
-		// 
-		// this->logFile << '\n';
 
 		return (char)border;
 	}
@@ -657,7 +641,7 @@ private:
 
 	void erase()
 	{
-		for (char i = 0; i < this->Points.size(); i++)
+		for (size_t i = 0; i < this->Points.size(); i++)
 		{
 			this->grid->at(Points[i].y)->at(Points[i].x).isBlank = true;
 		}
@@ -684,7 +668,6 @@ private:
 
 		if (this->tile == nullptr)
 		{
-			// this->tempGameOverMessage();
 			this->isRunning = false;
 		}
 		else
@@ -702,7 +685,6 @@ private:
 		}
 		char newFramePosition = this->fixFramePosition(this->compress() - this->_frameHeight / 2);
 		this->_framePosition = newFramePosition;
-		this->logFile << '\n';
 	}
 
 public:
@@ -725,8 +707,6 @@ public:
 		this->tile		= this->summonTile(tileType);
 		this->Points	= this->tile->points();
 		this->tab->update(tileType);
-
-		this->logFile.open("../log.txt"); // debug
 	}
 
 	~Map()
@@ -737,8 +717,6 @@ public:
 		}
 
 		delete this->grid;
-
-		this->logFile.close(); // debug
 	}
 
 	std::ostream& renderLine(std::ostream& os, char current)
@@ -802,16 +780,14 @@ public:
 		this->erase();
 		this->Points = this->tile->points();
 
-		for (char i = 0; i < this->Points.size(); i++)
+		for (size_t i = 0; i < this->Points.size(); i++)
 		{
-			// this->grid->at(Points[i].y)->at(Points[i].x).isBlank = false; // prev
 			Cell* cell = &(this->grid->at(Points[i].y)->at(Points[i].x));
 			cell->isBlank = false;
 			cell->color = this->tile->color();
 		}
 
 		char tileFocus = this->fixFramePosition(this->Points[0].y - this->_frameHeight / 2);
-		// this->logFile << "[log][tileFocus] { " << (int)tileFocus << " } [_framePosition] { " << (int)this->_framePosition << " }\n";
 		if (tileFocus > this->_framePosition)
 		{
 			this->_framePosition = tileFocus;
@@ -846,45 +822,47 @@ Key TurnClockwise(VK_E);
 Key TurnCounterClockwise(VK_Q);
 Key Interrupt(VK_ESCAPE);
 
-Tab KeyBindsDisplay("",
-	{
-		Option("back", []() { return; }, true),
-		Option("d", []() { return; }, false),
-		Option("a", []() { return; }, false),
-		Option("s", []() { return; }, false),
-		Option("q", []() { return; }, false),
-		Option("e", []() { return; }, false),
-	},
-	57, 0);
+Tab* KeyBindsDisplay;
+Tab* KeyBinds;
 
-void rebindMoveRight()
+static void rebindMoveRight()
 {
 	MoveRight.rebindVirtualKey();
-	KeyBindsDisplay.current()->setName(std::to_string(MoveRight.getVirtualKey()));
+	const size_t position = KeyBinds->current();
+	const std::string name = MoveRight.getVirtualKeyName();
+	KeyBindsDisplay->at(position)->setName(name);
 }
 
-void rebindMoveLeft()
+static void rebindMoveLeft()
 {
 	MoveLeft.rebindVirtualKey();
-	KeyBindsDisplay.current()->setName(std::to_string(MoveLeft.getVirtualKey()));
+	const size_t position = KeyBinds->current();
+	const std::string name = MoveLeft.getVirtualKeyName();
+	KeyBindsDisplay->at(position)->setName(name);
 }
 
-void rebindMoveDown()
+static void rebindMoveDown()
 {
 	MoveDown.rebindVirtualKey();
-	KeyBindsDisplay.current()->setName(std::to_string(MoveDown.getVirtualKey()));
+	const size_t position = KeyBinds->current();
+	const std::string name = MoveDown.getVirtualKeyName();
+	KeyBindsDisplay->at(position)->setName(name);
 }
 
-void rebindTurnClockwise()
+static void rebindTurnClockwise()
 {
 	TurnClockwise.rebindVirtualKey();
-	KeyBindsDisplay.current()->setName(std::to_string(TurnClockwise.getVirtualKey()));
+	const size_t position = KeyBinds->current();
+	const std::string name = TurnClockwise.getVirtualKeyName();
+	KeyBindsDisplay->at(position)->setName(name);
 }
 
-void rebindTurnCounterClockwise()
+static void rebindTurnCounterClockwise()
 {
 	TurnCounterClockwise.rebindVirtualKey();
-	KeyBindsDisplay.current()->setName(std::to_string(TurnCounterClockwise.getVirtualKey()));
+	const size_t position = KeyBinds->current();
+	const std::string name = TurnCounterClockwise.getVirtualKeyName();
+	KeyBindsDisplay->at(position)->setName(name);
 }
 
 static const int MAP_WIDTH = 10;
@@ -895,32 +873,29 @@ static const std::string GAME_PAUSED_MESSAGE("GAME  PAUSED");
 const double TPS = 2; // 4
 const double FPS = 30;
 
-Tab KeyBinds("keybinds",
-	{
-		Option("back", []() { KeyBindsDisplay.hide(); }, true),
-		Option("move right", rebindMoveRight, false),
-		Option("move left", rebindMoveLeft, false),
-		Option("move down", rebindMoveDown, false),
-		Option("rotate left", rebindTurnClockwise, false),
-		Option("rotate right", rebindTurnCounterClockwise, false)
-	},
-	[]() { KeyBindsDisplay.hide(); }, 42, 0);
-
-void keybidns()
+static void keybidns()
 {
-	KeyBindsDisplay.show();
-	KeyBinds.listenInput();
+	KeyBindsDisplay->show();
+	KeyBinds->listenInput();
+}
+
+static void onExit(const int& exitCode)
+{
+	delete KeyBindsDisplay;
+	delete KeyBinds;
+
+	exit(exitCode);
 }
 
 Tab PauseMenu("GAME  PAUSED",
 	{
-		Option("back to game", []() { return; }, true ),
-		Option("keybinds", keybidns, false ),
-		Option("quit", []() { exit(0); }, false )
+		new Option("back to game", []() { return; }, true ),
+		new Option("keybinds", keybidns, false ),
+		new Option("quit", []() { onExit(0); }, false )
 	},
 	3, 5); // MAP_WIDTH * 2 + 6, 0 
 
-void pause()
+static void pause()
 {
 	showConsoleCursor(false);
 	gotoxy((MAP_WIDTH * 2 + 2 - GAME_PAUSED_MESSAGE.size()) / 2, (FRAME_HEIGHT * 0.8 + 2) / 2);
@@ -929,7 +904,7 @@ void pause()
 	PauseMenu.listenInput();
 }
 
-void play()
+static void play()
 {
 	Map map(MAP_WIDTH, MAP_HEIGHT, FRAME_HEIGHT);
 	double dropTick = clock();
@@ -985,14 +960,36 @@ void play()
 
 Tab MainMenu("MENU",
 	{
-		Option("play", play, false ),
-		Option("keybinds", keybidns, false ),
-		Option("quit", []() { exit(0); }, false )
+		new Option("play", play, false ),
+		new Option("keybinds", keybidns, false ),
+		new Option("quit", []() { onExit(0); }, false )
 	},
 	5, 5);
 
 int main()
 {
+	KeyBindsDisplay = new Tab("",
+	{
+		new Option("", []() { return; }, true),
+		new Option("d", []() { return; }, false),
+		new Option("a", []() { return; }, false),
+		new Option("s", []() { return; }, false),
+		new Option("q", []() { return; }, false),
+		new Option("e", []() { return; }, false),
+	},
+	57, 0);
+
+	KeyBinds = new Tab("keybinds",
+	{
+		new Option("back", []() { KeyBindsDisplay->hide(); }, true),
+		new Option("move right", rebindMoveRight, false),
+		new Option("move left", rebindMoveLeft, false),
+		new Option("move down", rebindMoveDown, false),
+		new Option("rotate left", rebindTurnClockwise, false),
+		new Option("rotate right", rebindTurnCounterClockwise, false)
+	},
+	[]() { KeyBindsDisplay->hide(); }, 42, 0);
+
 	showConsoleCursor(false);
 	
 	Focus::UP.setVirtualKey(VK_W);
@@ -1001,4 +998,6 @@ int main()
 	Focus::EXECUTE.setVirtualKey(VK_D);
 	
 	MainMenu.listenInput();
+
+	onExit(0);
 }
