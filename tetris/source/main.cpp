@@ -815,15 +815,92 @@ public:
 	}
 };
 
-Key MoveRight(VK_D);
-Key MoveLeft(VK_A);
-Key MoveDown(VK_S);
-Key TurnClockwise(VK_E);
-Key TurnCounterClockwise(VK_Q);
+Key MoveRight;
+Key MoveLeft;
+Key MoveDown;
+Key TurnClockwise;
+Key TurnCounterClockwise;
 Key Interrupt(VK_ESCAPE);
 
 Tab* KeyBindsDisplay;
 Tab* KeyBinds;
+Tab* PauseMenu;
+Tab* MainMenu;
+
+static const std::string SETTINGS_PATH = "settings.txt";
+
+void readSettings()
+{
+	std::ifstream currentSettings(SETTINGS_PATH);
+
+	if (!currentSettings.is_open())
+	{
+		return;
+	}
+
+	if (is_empty(&currentSettings))
+	{
+		MoveRight.setVirtualKey(VK_D);
+		MoveLeft.setVirtualKey(VK_A);
+		MoveDown.setVirtualKey(VK_S);
+		TurnClockwise.setVirtualKey(VK_E);
+		TurnCounterClockwise.setVirtualKey(VK_Q);
+		currentSettings.close();
+		return;
+	}
+
+	int moveRightCode;
+	int moveLeftCode;
+	int moveDownCode;
+	int TurnClockwiseCode;
+	int TurnCounterClockwiseCode;
+
+	currentSettings >> moveRightCode >> moveLeftCode >> moveDownCode >> TurnClockwiseCode >> TurnCounterClockwiseCode;
+
+	MoveRight.setVirtualKey(moveRightCode);
+	MoveLeft.setVirtualKey(moveLeftCode);
+	MoveDown.setVirtualKey(moveDownCode);
+	TurnClockwise.setVirtualKey(TurnClockwiseCode);
+	TurnCounterClockwise.setVirtualKey(TurnCounterClockwiseCode);
+
+	currentSettings.close();
+}
+
+void writeSettings()
+{
+	std::ofstream newSettings(SETTINGS_PATH);
+
+	if (!newSettings.is_open())
+	{
+		return;
+	}
+
+	int moveRightCode = MoveRight.getVirtualKey();
+	int moveLeftCode = MoveLeft.getVirtualKey();
+	int moveDownCode = MoveDown.getVirtualKey();
+	int TurnClockwiseCode = TurnClockwise.getVirtualKey();
+	int TurnCounterClockwiseCode = TurnCounterClockwise.getVirtualKey();
+
+	newSettings << moveRightCode << ' ' << moveLeftCode << ' ' << moveDownCode << ' ' << TurnClockwiseCode << ' ' << TurnCounterClockwiseCode;
+
+	newSettings.close();
+}
+
+static void onExit(const int& exitCode)
+{
+	delete KeyBindsDisplay;
+	delete KeyBinds;
+	delete PauseMenu;
+	delete MainMenu;
+
+	exit(exitCode);
+}
+
+static void onKeybindsMenuHide()
+{
+	writeSettings();
+	KeyBindsDisplay->hide();
+}
 
 static void rebindMoveRight()
 {
@@ -865,6 +942,22 @@ static void rebindTurnCounterClockwise()
 	KeyBindsDisplay->at(position)->setName(name);
 }
 
+static void resetSettings()
+{
+	MoveRight.setVirtualKey(VK_D);
+	MoveLeft.setVirtualKey(VK_A);
+	MoveDown.setVirtualKey(VK_S);
+	TurnClockwise.setVirtualKey(VK_E);
+	TurnCounterClockwise.setVirtualKey(VK_Q);
+
+	writeSettings();
+	KeyBindsDisplay->at(1)->setName("D");
+	KeyBindsDisplay->at(2)->setName("A");
+	KeyBindsDisplay->at(3)->setName("S");
+	KeyBindsDisplay->at(4)->setName("E");
+	KeyBindsDisplay->at(5)->setName("Q");
+}
+
 static const int MAP_WIDTH = 10;
 static const int MAP_HEIGHT = 40;
 static const int FRAME_HEIGHT = 20;
@@ -879,29 +972,13 @@ static void keybidns()
 	KeyBinds->listenInput();
 }
 
-static void onExit(const int& exitCode)
-{
-	delete KeyBindsDisplay;
-	delete KeyBinds;
-
-	exit(exitCode);
-}
-
-Tab PauseMenu("GAME  PAUSED",
-	{
-		new Option("back to game", []() { return; }, true ),
-		new Option("keybinds", keybidns, false ),
-		new Option("quit", []() { onExit(0); }, false )
-	},
-	3, 5); // MAP_WIDTH * 2 + 6, 0 
-
 static void pause()
 {
 	showConsoleCursor(false);
 	gotoxy((MAP_WIDTH * 2 + 2 - GAME_PAUSED_MESSAGE.size()) / 2, (FRAME_HEIGHT * 0.8 + 2) / 2);
 	std::cout << GAME_PAUSED_MESSAGE;
 
-	PauseMenu.listenInput();
+	PauseMenu->listenInput();
 }
 
 static void play()
@@ -958,46 +1035,56 @@ static void play()
 	}
 }
 
-Tab MainMenu("MENU",
+int main()
+{
+	readSettings();
+	showConsoleCursor(false);
+
+	MainMenu = new Tab("MENU",
 	{
-		new Option("play", play, false ),
-		new Option("keybinds", keybidns, false ),
-		new Option("quit", []() { onExit(0); }, false )
+		new Option("play", play, false),
+		new Option("keybinds", keybidns, false),
+		new Option("quit", []() { onExit(0); }, false)
 	},
 	5, 5);
 
-int main()
-{
+	PauseMenu = new Tab("GAME  PAUSED",
+	{
+		new Option("back to game", []() { return; }, true),
+		new Option("keybinds", keybidns, false),
+		new Option("quit", []() { onExit(0); }, false)
+	},
+	3, 5); // MAP_WIDTH * 2 + 6, 0
+
+	KeyBinds = new Tab("keybinds",
+		{
+			new Option("back", onKeybindsMenuHide, true),
+			new Option("move right", rebindMoveRight, false),
+			new Option("move left", rebindMoveLeft, false),
+			new Option("move down", rebindMoveDown, false),
+			new Option("rotate left", rebindTurnClockwise, false),
+			new Option("rotate right", rebindTurnCounterClockwise, false),
+			new Option("reset to default", resetSettings, false)
+		}, onKeybindsMenuHide, 42, 0);
+
 	KeyBindsDisplay = new Tab("",
 	{
 		new Option("", []() { return; }, true),
-		new Option("d", []() { return; }, false),
-		new Option("a", []() { return; }, false),
-		new Option("s", []() { return; }, false),
-		new Option("q", []() { return; }, false),
-		new Option("e", []() { return; }, false),
+		new Option(MoveRight.getVirtualKeyName(), []() { return; }, false),
+		new Option(MoveLeft.getVirtualKeyName(), []() { return; }, false),
+		new Option(MoveDown.getVirtualKeyName(), []() { return; }, false),
+		new Option(TurnClockwise.getVirtualKeyName(), []() { return; }, false),
+		new Option(TurnCounterClockwise.getVirtualKeyName(), []() { return; }, false),
+		new Option("", []() { return; }, false)
 	},
-	57, 0);
-
-	KeyBinds = new Tab("keybinds",
-	{
-		new Option("back", []() { KeyBindsDisplay->hide(); }, true),
-		new Option("move right", rebindMoveRight, false),
-		new Option("move left", rebindMoveLeft, false),
-		new Option("move down", rebindMoveDown, false),
-		new Option("rotate left", rebindTurnClockwise, false),
-		new Option("rotate right", rebindTurnCounterClockwise, false)
-	},
-	[]() { KeyBindsDisplay->hide(); }, 42, 0);
-
-	showConsoleCursor(false);
+	61, 0);
 	
 	Focus::UP.setVirtualKey(VK_W);
 	Focus::DOWN.setVirtualKey(VK_S);
 	Focus::BACK.setVirtualKey(VK_A);
 	Focus::EXECUTE.setVirtualKey(VK_D);
 	
-	MainMenu.listenInput();
+	MainMenu->listenInput();
 
 	onExit(0);
 }

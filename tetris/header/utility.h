@@ -19,3 +19,8 @@ void showConsoleCursor(bool showFlag)
 	cursorInfo.bVisible = showFlag; // set the cursor visibility
 	SetConsoleCursorInfo(hConsole, &cursorInfo);
 }
+
+bool is_empty(std::ifstream* file)
+{
+	return file->peek() == std::ifstream::traits_type::eof();
+}

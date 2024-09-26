@@ -1,13 +1,18 @@
+# initial directory
 .vs
+tetris.sln
+versions
+
+# build utility files
 tetris/bin/intermediates
 tetris/Debug
 tetris/Release
-tetris/tests
 tetris/x64
-log.txt
-settings.txt
-tetris.vcxproj
-tetris.vcxproj.filters
-tetris.vcxproj.user
-tetris.sln
-versions
+
+# Visual Studio utility files
+tetris/tetris.vcxproj.filters
+tetris/tetris.vcxproj
+tetris/tetris.vcxproj.user
+
+# garbage
+tetris/tests
