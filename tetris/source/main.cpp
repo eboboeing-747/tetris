@@ -437,6 +437,7 @@ private:
 	std::array<Point, 4> Points;
 	std::array<Point, 4> validityCheck;
 	Tile* tile;
+	void (*_eventOnLock)();
 	Type nextTiletype;
 	char _width;
 	char _height;
@@ -535,6 +536,21 @@ private:
 		for (char i = 0; i < this->_width; i++)
 		{
 			targetLine->at(i) = sourceLine->at(i);
+		}
+	}
+
+	void scanForFilledLines() const
+	{
+		for (size_t i = this->grid->size() - 1; i != 0; i--)
+		{
+			if (this->lineState(i) == LineState::FILLED)
+			{
+				this->_eventOnLock();
+			}
+			else if (this->lineState(i) == LineState::EMPTY)
+			{
+				return;
+			}
 		}
 	}
 	
@@ -679,10 +695,17 @@ private:
 	void updateOnLock()
 	{
 		this->lock();
+
 		if (!this->isRunning)
 		{
 			return;
 		}
+
+		if (this->_eventOnLock != nullptr)
+		{
+			this->scanForFilledLines();
+		}
+
 		char newFramePosition = this->fixFramePosition(this->compress() - this->_frameHeight / 2);
 		this->_framePosition = newFramePosition;
 	}
@@ -690,6 +713,7 @@ private:
 public:
 	Map(char _width, char _height, char _frameHeight)
 	{
+		this->_eventOnLock = nullptr;
 		this->_width			= _width;
 		this->_height			= _height;
 		this->_frameHeight		= _frameHeight;
@@ -702,7 +726,7 @@ public:
 			this->grid->at(i) = new std::vector<Cell>(_width);
 		}
 
-		this->tab		= new Viewport(this->_width * 2 + 6, 0);
+		this->tab		= new Viewport(this->_width * 2 + 6, 3);
 		Type tileType	= this->randomTileType();
 		this->tile		= this->summonTile(tileType);
 		this->Points	= this->tile->points();
@@ -724,6 +748,11 @@ public:
 		os << this->grid->at(current);
 
 		return os;
+	}
+
+	void setEventOnLineDeletion(void (*_eventOnLock)())
+	{
+		this->_eventOnLock = _eventOnLock;
 	}
 
 	void rotate(short angle)
@@ -827,7 +856,7 @@ Tab* KeyBinds;
 Tab* PauseMenu;
 Tab* MainMenu;
 
-static const std::string SETTINGS_PATH = "settings.txt";
+static const std::string SETTINGS_PATH = "./settings.txt";
 
 void readSettings()
 {
@@ -835,7 +864,9 @@ void readSettings()
 
 	if (!currentSettings.is_open())
 	{
-		return;
+		std::cout << "[ERROR] failed to open ./settings.txt";
+		Sleep(5000);
+		exit(0);
 	}
 
 	if (is_empty(&currentSettings))
@@ -872,7 +903,9 @@ void writeSettings()
 
 	if (!newSettings.is_open())
 	{
-		return;
+		std::cout << "[ERROR] failed to open ./settings.txt";
+		Sleep(5000);
+		exit(0);
 	}
 
 	int moveRightCode = MoveRight.getVirtualKey();
@@ -884,16 +917,6 @@ void writeSettings()
 	newSettings << moveRightCode << ' ' << moveLeftCode << ' ' << moveDownCode << ' ' << TurnClockwiseCode << ' ' << TurnCounterClockwiseCode;
 
 	newSettings.close();
-}
-
-static void onExit(const int& exitCode)
-{
-	delete KeyBindsDisplay;
-	delete KeyBinds;
-	delete PauseMenu;
-	delete MainMenu;
-
-	exit(exitCode);
 }
 
 static void onKeybindsMenuHide()
@@ -963,7 +986,8 @@ static const int MAP_HEIGHT = 40;
 static const int FRAME_HEIGHT = 20;
 static const std::string GAME_PAUSED_MESSAGE("GAME  PAUSED");
 
-const double TPS = 2; // 4
+int SCORE = 0;
+double TPS = 2; // 4
 const double FPS = 30;
 
 static void keybidns()
@@ -981,9 +1005,16 @@ static void pause()
 	PauseMenu->listenInput();
 }
 
+static void onLineDeletion()
+{
+	SCORE++;
+	TPS += 0.1;
+}
+
 static void play()
 {
 	Map map(MAP_WIDTH, MAP_HEIGHT, FRAME_HEIGHT);
+	map.setEventOnLineDeletion(onLineDeletion);
 	double dropTick = clock();
 	double renderTick = clock();
 
@@ -1030,6 +1061,10 @@ static void play()
 		{
 			renderTick = clock();
 			map.temp();
+
+			gotoxy((MAP_WIDTH * 2) + 9, 1);
+			std::cout << "SCORE: " << SCORE;
+
 			gotoxy(0, 0);
 		}
 	}
@@ -1044,7 +1079,7 @@ int main()
 	{
 		new Option("play", play, false),
 		new Option("keybinds", keybidns, false),
-		new Option("quit", []() { onExit(0); }, false)
+		new Option("quit", []() { exit(0); }, false)
 	},
 	5, 5);
 
@@ -1052,7 +1087,7 @@ int main()
 	{
 		new Option("back to game", []() { return; }, true),
 		new Option("keybinds", keybidns, false),
-		new Option("quit", []() { onExit(0); }, false)
+		new Option("quit", []() { exit(0); }, false)
 	},
 	3, 5); // MAP_WIDTH * 2 + 6, 0
 
@@ -1086,5 +1121,5 @@ int main()
 	
 	MainMenu->listenInput();
 
-	onExit(0);
+	return 0;
 }
