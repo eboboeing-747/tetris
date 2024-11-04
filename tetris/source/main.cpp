@@ -433,10 +433,11 @@ class Map
 {
 private:
 	Viewport* tab;
+	Tile* tile;
+	Tab* _gameOver;
 	std::vector<std::vector<Cell>*>* grid;
 	std::array<Point, 4> Points;
 	std::array<Point, 4> validityCheck;
-	Tile* tile;
 	void (*_eventOnLock)();
 	Type nextTiletype;
 	char _width;
@@ -663,14 +664,6 @@ private:
 		}
 	}
 
-	void tempGameOverMessage()
-	{
-		const std::string GAME_OVER_MESSAGE("GAME  OVER");
-		gotoxy((this->_width * 2 + 2 - GAME_OVER_MESSAGE.size()) / 2, (this->_frameHeight * 0.8 + 2) / 2);
-		std::cout << GAME_OVER_MESSAGE;
-		this->isRunning = false;
-	}
-
 	void lock()
 	{
 		for (std::array<Point, 4>::iterator i = this->Points.begin(); i != this->Points.end(); i++)
@@ -685,6 +678,8 @@ private:
 		if (this->tile == nullptr)
 		{
 			this->isRunning = false;
+			this->_gameOver->listenInput();
+			gotoxy(0, 0);
 		}
 		else
 		{
@@ -713,7 +708,7 @@ private:
 public:
 	Map(char _width, char _height, char _frameHeight)
 	{
-		this->_eventOnLock = nullptr;
+		this->_eventOnLock		= nullptr;
 		this->_width			= _width;
 		this->_height			= _height;
 		this->_frameHeight		= _frameHeight;
@@ -731,6 +726,13 @@ public:
 		this->tile		= this->summonTile(tileType);
 		this->Points	= this->tile->points();
 		this->tab->update(tileType);
+		
+		this->_gameOver = new Tab("GAME  OVER",
+		{
+			new Option("to main menu", []() { return; }, true),
+			new Option("quit", []() { exit(0); }, false)
+		},
+		(this->_width * 2 + 2 - 16) / 2, (this->_frameHeight * 0.8 + 2) / 2);
 	}
 
 	~Map()
@@ -741,6 +743,9 @@ public:
 		}
 
 		delete this->grid;
+		delete this->tile;
+		delete this->tab;
+		delete this->_gameOver;
 	}
 
 	std::ostream& renderLine(std::ostream& os, char current)
@@ -1032,22 +1037,24 @@ static void play()
 		{
 			map.move(Direction::RIGHT);
 		}
-		else if (MoveLeft.isPressed())
+		if (MoveLeft.isPressed())
 		{
 			map.move(Direction::LEFT);
 		}
-		else if (MoveDown.isPressed())
+		if (MoveDown.isPressed())
 		{
 			map.move(Direction::DOWN);
 		}
-		else if (TurnClockwise.isPressed())
+		if (TurnClockwise.isPressed())
 		{
 			map.rotate(90);
 		}
-		else if (TurnCounterClockwise.isPressed())
+		if (TurnCounterClockwise.isPressed())
 		{
 			map.rotate(-90);
 		}
+
+		map.update();
 
 		if ((clock() - dropTick) / CLOCKS_PER_SEC >= 1.0 / TPS)
 		{
@@ -1089,7 +1096,7 @@ int main()
 		new Option("keybinds", keybidns, false),
 		new Option("quit", []() { exit(0); }, false)
 	},
-	3, 5); // MAP_WIDTH * 2 + 6, 0
+	3, 5);
 
 	KeyBinds = new Tab("keybinds",
 		{
@@ -1119,7 +1126,10 @@ int main()
 	Focus::BACK.setVirtualKey(VK_A);
 	Focus::EXECUTE.setVirtualKey(VK_D);
 	
-	MainMenu->listenInput();
+	while (true)
+	{
+		MainMenu->listenInput();
+	}
 
 	return 0;
 }
